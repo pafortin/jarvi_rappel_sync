@@ -106,11 +106,9 @@ function readConfig(env) {
 
 async function fetchJarviTodos(env, cfg) {
   const query = `
-    query SyncTodos($uid: uuid!, $after: timestamptz) {
+    query SyncTodos($after: timestamptz) {
       todos(
         where: {
-          ownedByUserId: { _eq: $uid }
-          doneAt: { _is_null: true }
           deletedAt: { _is_null: true }
           scheduledAt: { _is_null: false, _gte: $after }
         }
@@ -120,12 +118,6 @@ async function fetchJarviTodos(env, cfg) {
         id
         title
         scheduledAt
-        priority
-        mentions {
-          profile { firstName lastName }
-          company { name }
-          project { name }
-        }
       }
     }`;
 
@@ -138,13 +130,11 @@ async function fetchJarviTodos(env, cfg) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: env.JARVI_AUTH_TOKEN.startsWith("Bearer ")
-        ? env.JARVI_AUTH_TOKEN
-        : "Bearer " + env.JARVI_AUTH_TOKEN,
+      "X-API-KEY": env.JARVI_AUTH_TOKEN,
     },
     body: JSON.stringify({
       query,
-      variables: { uid: env.JARVI_USER_ID, after },
+      variables: { after },
     }),
   });
 
@@ -156,10 +146,7 @@ async function fetchJarviTodos(env, cfg) {
     throw new Error("Jarvi GraphQL : " + JSON.stringify(data.errors));
   }
 
-  const minRank = PRIORITY_RANK[cfg.minPriority] || 4;
-  return (data.data.todos || []).filter(
-    (t) => (PRIORITY_RANK[t.priority] || 4) <= minRank
-  );
+  return data.data.todos || [];
 }
 
 /** Convertit le titre HTML d'un rappel Jarvi en texte propre. */
@@ -199,25 +186,14 @@ function buildEvent(todo, cfg) {
   const start = new Date(todo.scheduledAt);
   const end = new Date(start.getTime() + cfg.durationMinutes * 60 * 1000);
 
-  const label = mentionLabel(todo);
-  let summary = cfg.titlePrefix + cleanTitle(todo.title);
-  if (label && !summary.includes(label)) {
-    summary += " (" + label + ")";
-  }
-
   return {
-    summary,
-    description:
-      "Rappel synchronisé depuis Jarvi.\nPriorité : " +
-      todo.priority +
-      "\nID Jarvi : " +
-      todo.id,
+    summary: cfg.titlePrefix + cleanTitle(todo.title),
+    description: "Rappel synchronisé depuis Jarvi.\nID Jarvi : " + todo.id,
     start: { dateTime: start.toISOString(), timeZone: cfg.timezone },
     end: { dateTime: end.toISOString(), timeZone: cfg.timezone },
     extendedProperties: {
       private: {
         jarviTodoId: todo.id,
-        jarviPriority: todo.priority,
         jarviScheduledAt: todo.scheduledAt,
       },
     },
@@ -233,11 +209,6 @@ function eventNeedsUpdate(existing, desired) {
   if (!exStart || new Date(exStart).getTime() !== new Date(wantStart).getTime()) {
     return true;
   }
-  const exPrio =
-    existing.extendedProperties &&
-    existing.extendedProperties.private &&
-    existing.extendedProperties.private.jarviPriority;
-  if (exPrio !== desired.extendedProperties.private.jarviPriority) return true;
   return false;
 }
 
