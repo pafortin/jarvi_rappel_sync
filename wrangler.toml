@@ -1,0 +1,34 @@
+name = "jarvi-gcal-sync"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+
+# --- Cron : déclenche la synchro automatiquement ---
+# Par défaut : toutes les heures, à la minute 0.
+# Format cron : minute heure jour mois jour-semaine
+# Exemples : "*/30 * * * *" = toutes les 30 min · "0 5 * * *" = chaque jour à 05h UTC
+[triggers]
+crons = ["0 * * * *"]
+
+# --- Variables non sensibles (modifiables ici) ---
+[vars]
+# Fuseau horaire pour l'affichage des événements
+TIMEZONE = "Europe/Paris"
+# Durée d'un événement créé à partir d'un rappel (minutes)
+EVENT_DURATION_MINUTES = "30"
+# ID du calendrier cible ("primary" = agenda principal)
+CALENDAR_ID = "primary"
+# Préfixe ajouté au titre des événements dans l'agenda
+EVENT_TITLE_PREFIX = "Jarvi · "
+# Ne synchroniser que les rappels non terminés à partir de maintenant ("true"/"false")
+ONLY_UPCOMING = "true"
+# Filtre de priorité minimale : P1, P2, P3 ou P4 (P4 = tout)
+MIN_PRIORITY = "P4"
+
+# --- Secrets (à définir via `wrangler secret put`, JAMAIS ici) ---
+# JARVI_GRAPHQL_URL        Endpoint GraphQL Hasura de Jarvi
+# JARVI_AUTH_TOKEN         Token Bearer / JWT d'accès à l'API Jarvi
+# JARVI_USER_ID            UUID de ton compte Jarvi (ownedByUserId)
+# GOOGLE_CLIENT_ID         Client ID OAuth Google
+# GOOGLE_CLIENT_SECRET     Client secret OAuth Google
+# GOOGLE_REFRESH_TOKEN     Refresh token OAuth (scope calendar)
+# SYNC_SECRET              Jeton pour protéger le déclenchement manuel HTTP

@@ -1,0 +1,12 @@
+# Copie ce fichier en .dev.vars pour tester en local (`wrangler dev`).
+# En production, utilise plutôt `wrangler secret put <NOM>`.
+
+JARVI_GRAPHQL_URL="https://hasura.jarvi.tech/v1/graphql"
+JARVI_AUTH_TOKEN="ton_token_bearer_jarvi"
+JARVI_USER_ID="39da89eb-71a4-46ec-9906-7d7b3708d79f"
+
+GOOGLE_CLIENT_ID="xxxxxxxx.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="xxxxxxxx"
+GOOGLE_REFRESH_TOKEN="1//xxxxxxxx"
+
+SYNC_SECRET="un_long_secret_aleatoire"

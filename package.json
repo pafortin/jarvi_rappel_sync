@@ -1,0 +1,15 @@
+{
+  "name": "jarvi-gcal-sync",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker qui pousse les rappels Jarvi vers Google Calendar",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
