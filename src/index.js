@@ -189,6 +189,7 @@ function buildEvent(todo, cfg) {
   return {
     summary: cfg.titlePrefix + cleanTitle(todo.title),
     description: "Rappel synchronisé depuis Jarvi.\nID Jarvi : " + todo.id,
+    colorId: "4",
     start: { dateTime: start.toISOString(), timeZone: cfg.timezone },
     end: { dateTime: end.toISOString(), timeZone: cfg.timezone },
     extendedProperties: {
