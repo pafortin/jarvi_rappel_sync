@@ -14,11 +14,13 @@ crons = ["0 * * * *"]
 # Fuseau horaire pour l'affichage des événements
 TIMEZONE = "Europe/Paris"
 # Durée d'un événement créé à partir d'un rappel (minutes)
-EVENT_DURATION_MINUTES = "30"
+EVENT_DURATION_MINUTES = "15"
 # ID du calendrier cible ("primary" = agenda principal)
 CALENDAR_ID = "primary"
 # Préfixe ajouté au titre des événements dans l'agenda
 EVENT_TITLE_PREFIX = "Jarvi · "
+# Longueur maximale du titre « Nom · action », préfixe exclu (caractères)
+TITLE_MAX_LENGTH = "60"
 # Ne synchroniser que les rappels non terminés à partir de maintenant ("true"/"false")
 ONLY_UPCOMING = "true"
 # Filtre de priorité minimale : P1, P2, P3 ou P4 (P4 = tout)

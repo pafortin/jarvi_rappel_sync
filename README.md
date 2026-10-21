@@ -122,9 +122,10 @@ npx wrangler secret put SYNC_SECRET        # un long texte aléatoire de ton cho
 |---|---|---|
 | `crons` | fréquence de synchro | `0 * * * *` (chaque heure) |
 | `TIMEZONE` | fuseau d'affichage | `Europe/Paris` |
-| `EVENT_DURATION_MINUTES` | durée d'un événement | `30` |
+| `EVENT_DURATION_MINUTES` | durée d'un événement | `15` |
 | `CALENDAR_ID` | agenda cible | `primary` |
 | `EVENT_TITLE_PREFIX` | préfixe de titre | `Jarvi · ` |
+| `TITLE_MAX_LENGTH` | longueur maximale du titre « Nom · action », préfixe exclu | `60` |
 | `ONLY_UPCOMING` | ignorer les rappels passés | `true` |
 | `MIN_PRIORITY` | priorité minimale (P1→P4) | `P4` (tout) |
 

@@ -95,6 +95,7 @@ function readConfig(env) {
     durationMinutes: parseInt(env.EVENT_DURATION_MINUTES || "30", 10),
     calendarId: env.CALENDAR_ID || "primary",
     titlePrefix: env.EVENT_TITLE_PREFIX || "Jarvi · ",
+    titleMaxLength: parseInt(env.TITLE_MAX_LENGTH || "60", 10),
     onlyUpcoming: (env.ONLY_UPCOMING || "true") === "true",
     minPriority: env.MIN_PRIORITY || "P4",
   };
@@ -167,6 +168,59 @@ function cleanTitle(htmlTitle) {
   return text || "Rappel Jarvi";
 }
 
+/** Décode les entités HTML courantes d'un attribut ou d'un fragment. */
+function decodeEntities(text) {
+  return text
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&quot;/g, '"');
+}
+
+/** Coupe sur une limite de mot, avec une ellipse. */
+function truncate(text, maxLength) {
+  if (text.length <= maxLength) return text;
+  let cut = text.slice(0, maxLength);
+  if (text[maxLength] !== " ") {
+    const lastSpace = cut.lastIndexOf(" ");
+    if (lastSpace > 0) cut = cut.slice(0, lastSpace);
+  }
+  return cut.replace(/[\s,;:.(]+$/, "") + "…";
+}
+
+/**
+ * Titre court pour l'agenda : « Nom · action ».
+ * Le nom vient de la première mention ; l'action, de la première phrase
+ * du premier paragraphe qui contient autre chose que des mentions.
+ * Le texte complet du rappel reste lisible dans Jarvi.
+ */
+function shortTitle(htmlTitle, maxLength) {
+  const source = htmlTitle || "";
+  const mention = source.match(/<span\b[^>]*\bdata-type="mention"[^>]*\bdata-label="([^"]*)"/i);
+  const name = mention ? decodeEntities(mention[1]).trim() : "";
+
+  let action = "";
+  for (const chunk of source.split(/<\/(?:p|div|li)>|<br\s*\/?>/i)) {
+    const own = cleanTitle(chunk.replace(/<span\b[^>]*\bdata-type="mention"[^>]*>[\s\S]*?<\/span>/gi, ""));
+    if (own === "Rappel Jarvi") continue;
+    action = own;
+    break;
+  }
+  // Si l'action répète le nom en tête (« Oyo N'doro (Intersec) : … »), on garde le reste.
+  if (name && action.toLowerCase().startsWith(name.toLowerCase())) {
+    action = action.slice(name.length).replace(/^[\s:,]+/, "");
+  }
+  const sentence = action.match(/^(.+?[.?!])(\s|$)/);
+  if (sentence) action = sentence[1];
+
+  if (!name && !action) return "Rappel Jarvi";
+  if (!name) return truncate(action, maxLength);
+  if (!action) return name;
+  return name + " · " + truncate(action, Math.max(maxLength - name.length - 3, 20));
+}
+
 function mentionLabel(todo) {
   const m = (todo.mentions || [])[0];
   if (!m) return null;
@@ -187,9 +241,9 @@ function buildEvent(todo, cfg) {
   const end = new Date(start.getTime() + cfg.durationMinutes * 60 * 1000);
 
   return {
-    summary: cfg.titlePrefix + cleanTitle(todo.title),
-    description: "Rappel synchronisé depuis Jarvi.\nID Jarvi : " + todo.id,
-    colorId: "4",
+    summary: cfg.titlePrefix + shortTitle(todo.title, cfg.titleMaxLength),
+    description: cleanTitle(todo.title) + "\n\nRappel synchronisé depuis Jarvi.\nID Jarvi : " + todo.id,
+    colorId: "8",
     start: { dateTime: start.toISOString(), timeZone: cfg.timezone },
     end: { dateTime: end.toISOString(), timeZone: cfg.timezone },
     extendedProperties: {
@@ -205,6 +259,12 @@ function buildEvent(todo, cfg) {
 /** Compare l'événement existant à la version désirée. */
 function eventNeedsUpdate(existing, desired) {
   if (existing.summary !== desired.summary) return true;
+  if ((existing.description || "") !== desired.description) return true;
+  if ((existing.colorId || "") !== desired.colorId) return true;
+  const exEnd = existing.end && existing.end.dateTime;
+  if (!exEnd || new Date(exEnd).getTime() !== new Date(desired.end.dateTime).getTime()) {
+    return true;
+  }
   const exStart = existing.start && existing.start.dateTime;
   const wantStart = desired.start.dateTime;
   if (!exStart || new Date(exStart).getTime() !== new Date(wantStart).getTime()) {
