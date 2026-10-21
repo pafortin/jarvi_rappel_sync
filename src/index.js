@@ -199,7 +199,8 @@ function truncate(text, maxLength) {
 function shortTitle(htmlTitle, maxLength) {
   const source = htmlTitle || "";
   const mention = source.match(/<span\b[^>]*\bdata-type="mention"[^>]*\bdata-label="([^"]*)"/i);
-  const name = mention ? decodeEntities(mention[1]).trim() : "";
+  // Un nom de projet peut être long (« Campagne Market Mapping 26/11 · … ») : on le borne.
+  const name = mention ? truncate(decodeEntities(mention[1]).trim(), 32) : "";
 
   let action = "";
   for (const chunk of source.split(/<\/(?:p|div|li)>|<br\s*\/?>/i)) {
@@ -212,7 +213,9 @@ function shortTitle(htmlTitle, maxLength) {
   if (name && action.toLowerCase().startsWith(name.toLowerCase())) {
     action = action.slice(name.length).replace(/^[\s:,]+/, "");
   }
-  const sentence = action.match(/^(.+?[.?!])(\s|$)/);
+  // Fin de phrase : « ? », « ! », ou un point précédé d'un mot d'au moins quatre
+  // lettres (pour ne pas couper sur « mer. », « jeu. », « 14/10. »).
+  const sentence = action.match(/^(.+?(?:[?!]|[a-zà-ÿ]{4,}\.))(\s|$)/i);
   if (sentence) action = sentence[1];
 
   if (!name && !action) return "Rappel Jarvi";
